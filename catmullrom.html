@@ -1,0 +1,283 @@
+<html>
+<head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js" integrity="sha512-XTa+nLKjbTCUazCWzwYpykjsTQDaepuKlg9YToCij7+Bdi9aHQhBQlV0rfnYmactJjHdusRQQV+6qWNNv0BScA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script type="text/javascript">
+
+var canvas, ctx, flag = false,
+	prevX = 0,
+	currX = 0,
+	prevY = 0,
+	currY = 0,
+	x=0,
+	y=0,
+	dx=0,
+	t=0,
+	t1=0,
+	et=0,
+	ipoint=0,
+	i=0,
+	x0=0,y0=0,x1=0,y1=0,x2=0,y2=0;
+	xn3=yn3=xn2=yn2=xn1=yn1=xn=yn=0;
+	mindist=0;
+	;
+	var debug=0;
+	dot_flag = false;
+
+
+
+var linecolor = "red",
+	linewidth = 2;
+
+function init() {
+	canvas = document.getElementById('can');
+	ctx = canvas.getContext("2d");
+	w = canvas.width;
+	h = canvas.height;
+
+	canvas.addEventListener("mousemove", function (e) {
+		findxy('move', e); et=e.timeStamp;
+	}, false);
+	canvas.addEventListener("mousedown", function (e) {
+		findxy('down', e);et=e.timeStamp;
+	}, false);
+	canvas.addEventListener("mouseup", function (e) {
+		findxy('up', e)
+	}, false);
+	canvas.addEventListener("mouseout", function (e) {
+		findxy('out', e)
+	}, false);
+	init2();
+}
+
+function init2(){
+	canvas.addEventListener("touchmove", function (e) {
+		findxy('touchmove', e)
+	}, false);
+	canvas.addEventListener("touchstart", function (e) {
+		findxy('touchstart', e)
+	}, false);
+	canvas.addEventListener("touchend", function (e) {
+		findxy('touchend', e)
+	}, false);
+
+}
+
+function clearCanvas(){
+                ctx.clearRect(0, 0, w, h);
+
+}
+	
+function draw() {
+ipoint=ipoint+1;
+//console.log(ipoint);
+if (ipoint%1000==0){
+}
+
+	ctx.beginPath();
+	ctx.moveTo(prevX, prevY);
+	ctx.lineTo(currX, currY);
+	ctx.strokeStyle = linecolor;
+	ctx.lineWidth = linewidth;
+	ctx.stroke();
+	ctx.closePath();
+	ctx.beginPath();
+	ctx.moveTo(prevX, prevY-200);
+	ctx.lineTo(currX, currY-200);
+	ctx.strokeStyle = linecolor;
+	ctx.lineWidth = linewidth;
+//	ctx.stroke();
+	ctx.closePath();}
+	
+	
+        
+function findxy(res, e) {
+	var linear = document.getElementById('linear');
+	var raw = document.getElementById('raw');
+	var spline = document.getElementById('spline');
+	var slownoise = document.getElementById('slownoise');
+	mindist=1;
+    if (slownoise.checked){
+	mindist = 5;
+	}
+	if (res == 'down') {
+	prevX = currX;
+	prevY = currY;
+	currX = e.clientX - canvas.offsetLeft;
+	currY = e.clientY - canvas.offsetTop;
+	x=currX;
+	y=currY;
+	t=et;
+	t1=t;
+	i=0;
+	flag = true;
+	dot_flag = true;
+		if (dot_flag) {
+			dot_flag = false;
+		}
+	}
+	if (res == 'up' || res == "out") {
+		flag = false;
+		finalizeCatmullRom();	
+		xn3=yn3=xn2=yn2=xn1=yn1=xn=yn=0;
+	}
+	if (res == 'move') {
+		if (flag) {
+			x=e.clientX - canvas.offsetLeft;
+			y=e.clientY - canvas.offsetTop;
+			dx = Math.sqrt( (prevX-x)**2 + (prevY-y)**2);
+			
+			if (Math.sqrt( (xn1-x)**2 + (yn1-y)**2) > mindist){
+			i=i+1;
+			xn=x;
+			yn=y;
+			if (i==2){
+				ctx.beginPath();
+				ctx.moveTo(xn1, yn1);
+				ctx.lineTo(xn, yn);
+				if (debug > 0){
+				ctx.strokeStyle = "blue";
+				ctx.lineWidth = "5";
+				}
+				ctx.stroke();
+				ctx.closePath();
+			}
+			if (i >= 4){
+			if (spline.checked){
+			drawCatmullRom();
+			}
+			}
+			xn3=xn2;
+			yn3=yn2;
+			yn2=yn1;
+			xn2=xn1;
+			xn1=xn;
+			yn1=yn;
+			}
+ 			prevX = currX;
+			prevY = currY;
+			currX = x;
+			currY = y;
+			if (raw.checked){
+			ctx.fillRect(currX-5,currY-5,10,10);
+			}
+//			ctx.fillRect(currX-2,currY+58,4,4);
+			if (linear.checked){
+			draw();
+			}
+			t1=t;
+			
+		}
+	}
+}
+
+
+function drawCatmullRom(){
+var alpha=.5;
+var dx=xn-xn1;
+var dy=yn-yn1;
+var l23_2a = Math.pow(dx * dx + dy * dy, alpha)
+var l23_a = Math.sqrt(l23_2a);
+dx=xn1-xn2;
+dy=yn1-yn2;
+var l12_2a = Math.pow(dx * dx + dy * dy, alpha)
+var l12_a = Math.sqrt(l12_2a);
+dx=xn2-xn3;
+dy=yn2-yn3;
+var l01_2a = Math.pow(dx * dx + dy * dy, alpha)
+var l01_a = Math.sqrt(l01_2a);
+x1=xn2;
+y1=yn2;
+x2=xn1;
+y2=yn1;
+
+if (l01_a > 0){
+var a = 2 * l01_2a + 3 * l01_a * l12_a + l12_2a;
+var n = 3 * l01_a * (l01_a + l12_a);
+x1 = (xn2 * a - xn3 * l12_2a + xn1 * l01_2a) / n;
+y1 = (yn2 * a - yn3 * l12_2a + yn1 * l01_2a) / n;
+}
+if (l23_a > 0){
+var b = 2 * l23_2a + 3 * l23_a * l12_a + l12_2a;
+var m = 3 * l23_a * (l23_a + l12_a);
+x2 = (xn1 * b + xn2 * l23_2a - xn * l12_2a) / m;
+y2 = (yn1 * b + yn2 * l23_2a - yn * l12_2a) / m;
+}
+
+	ctx.beginPath();
+	ctx.moveTo(xn2,yn2);
+	ctx.bezierCurveTo(x1, y1, x2, y2, xn1, yn1);
+	ctx.strokeStyle = "green";
+	ctx.lineWidth = linewidth;
+	ctx.stroke();
+	ctx.closePath();
+	if (debug > 2){
+	ctx.beginPath();
+	ctx.moveTo(xn2,yn2+50);
+	ctx.bezierCurveTo(x1, y1+50, x2, y2+50, xn1, yn1+50);
+	ctx.strokeStyle = "green";
+	ctx.lineWidth = linewidth;
+//	ctx.stroke();
+	ctx.closePath();
+	}
+}
+
+
+function finalizeCatmullRom(){
+	ctx.beginPath();
+	ctx.moveTo(prevX, prevY);
+	ctx.lineTo(currX, currY);
+	if (debug > 0){
+	ctx.strokeStyle = "blue";
+	}
+	ctx.lineWidth = linewidth;
+	ctx.stroke();
+	ctx.closePath();
+}
+
+function drawBasis(){
+x1=xn2;
+y1=yn2;
+x2=xn1;
+y2=yn1;
+	ctx.beginPath();
+	ctx.moveTo(xn2,yn2);
+	ctx.bezierCurveTo(x1, y1, x2, y2, xn1, yn1);
+	ctx.strokeStyle = "green";
+	ctx.lineWidth = linewidth;
+	ctx.stroke();
+	ctx.closePath();
+	if (debug > 2){
+	ctx.beginPath();
+	ctx.moveTo(xn2,yn2+50);
+	ctx.bezierCurveTo(x1, y1+50, x2, y2+50, xn1, yn1+50);
+	ctx.strokeStyle = "green";
+	ctx.lineWidth = linewidth;
+//	ctx.stroke();
+	ctx.closePath();
+	}
+}
+
+</script>
+</head>
+<body onload="init()">
+<div>
+ <button onclick="clearCanvas()">Clear canvas</button> 
+<input type="checkbox" id="raw" name="raw" value="raw">
+<label for="raw">Show raw data</label></div>
+<div>Line type:
+<input type="checkbox" id="linear" name="linear" value="LinearInterpolation">
+<label for="linear">Linear interpolation</label>
+<input type="checkbox" id="spline" name="spline" value="spline">
+<label for="linear">Spline interpolation</label>
+</div>
+<div>Spline options
+<input type="checkbox" id="slownoise" name="slownoise" value="slownoise">
+<label for="slownoise">Removal of slow movement wiggles</label>
+</div>
+
+
+ <canvas id="can" width="1000" height="1000" style="border:2px solid;"></canvas>
+
+
+</body>
+</html>	
